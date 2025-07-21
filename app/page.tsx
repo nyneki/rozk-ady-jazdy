@@ -33,6 +33,7 @@ import {
   Loader2,
   Database,
   AlertCircle,
+  Lock,
 } from "lucide-react"
 import Image from "next/image"
 import { createClient } from "@supabase/supabase-js"
@@ -72,6 +73,7 @@ export default function TrainSchedulesPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [databaseStatus, setDatabaseStatus] = useState<"checking" | "ready" | "missing" | "local">("checking")
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false) // Nowy stan dla okna logowania
 
   const [formData, setFormData] = useState({
     trainNumber: "",
@@ -165,7 +167,7 @@ export default function TrainSchedulesPage() {
   }
 
   const loadSchedules = async () => {
-    if (!supabase || databaseStatus !== "ready") return
+    if (!supabase) return
 
     try {
       const { data, error } = await supabase
@@ -181,7 +183,7 @@ export default function TrainSchedulesPage() {
   }
 
   const loadServerLinks = async () => {
-    if (!supabase || databaseStatus !== "ready") return
+    if (!supabase) return
 
     try {
       const { data, error } = await supabase.from("server_links").select("*").order("created_at", { ascending: false })
@@ -198,6 +200,7 @@ export default function TrainSchedulesPage() {
       setIsAuthenticated(true)
       setPassword("")
       setAuthError("")
+      setIsLoginDialogOpen(false) // Zamknij okno logowania po udanym zalogowaniu
     } else {
       setAuthError("Hasło niepoprawne!")
     }
@@ -521,21 +524,23 @@ export default function TrainSchedulesPage() {
       <div className="flex max-w-7xl mx-auto p-4 gap-6">
         {/* Main Content */}
         <div className="flex-1">
-          {/* Add Schedule Button */}
+          {/* Buttons for Add Schedule and Admin Login */}
           <div className="flex justify-center my-8 animate-fade-in">
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            {/* Nowy przycisk Zaloguj się jako Administrator */}
+            <Dialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-5 w-5 mr-2" />
-                  Dodaj Nowy Rozkład
+                <Button size="lg" variant="outline" className="bg-gray-200 hover:bg-gray-300">
+                  <Lock className="h-5 w-5 mr-2" />
+                  Zaloguj się jako Administrator
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Dodaj Nowy Rozkład Jazdy</DialogTitle>
-                  <DialogDescription>Wypełnij formularz aby dodać nowy rozkład jazdy pociągu.</DialogDescription>
+                  <DialogTitle>Logowanie Administratora</DialogTitle>
+                  <DialogDescription>
+                    Wprowadź kod administratora aby uzyskać dostęp do funkcji zarządzania.
+                  </DialogDescription>
                 </DialogHeader>
-
                 {!isAuthenticated ? (
                   <div className="space-y-4">
                     <Label htmlFor="password">Kod administratora</Label>
@@ -554,6 +559,48 @@ export default function TrainSchedulesPage() {
                     )}
                     <Button onClick={handleAuth} className="w-full">
                       Zaloguj się
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center text-green-600 font-medium">
+                    Jesteś zalogowany jako administrator!
+                    <Button onClick={() => setIsLoginDialogOpen(false)} className="mt-4 w-full">
+                      Zamknij
+                    </Button>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+
+            {/* Istniejący przycisk Dodaj Nowy Rozkład */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 ml-4">
+                  {" "}
+                  {/* Dodano ml-4 dla odstępu */}
+                  <Plus className="h-5 w-5 mr-2" />
+                  Dodaj Nowy Rozkład
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Dodaj Nowy Rozkład Jazdy</DialogTitle>
+                  <DialogDescription>Wypełnij formularz aby dodać nowy rozkład jazdy pociągu.</DialogDescription>
+                </DialogHeader>
+
+                {!isAuthenticated ? (
+                  <div className="space-y-4 text-center">
+                    <p className="text-lg font-medium text-gray-700">
+                      Musisz być zalogowany jako administrator, aby dodawać rozkłady.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        setIsDialogOpen(false)
+                        setIsLoginDialogOpen(true)
+                      }}
+                      className="w-full"
+                    >
+                      Zaloguj się teraz
                     </Button>
                   </div>
                 ) : (
@@ -656,7 +703,7 @@ export default function TrainSchedulesPage() {
                         variant="outline"
                         onClick={() => {
                           setIsDialogOpen(false)
-                          setIsAuthenticated(false)
+                          // setIsAuthenticated(false) // Nie wylogowujemy po anulowaniu dodawania
                           setAuthError("")
                         }}
                         disabled={submitting}
