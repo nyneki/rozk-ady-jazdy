@@ -11,7 +11,6 @@ export const metadata: Metadata = {
   verification:{ 
     // Tutaj zaczyna się obiekt weryfikacji
     google: "c-SCJm_lZYDtJ-QhrXAyyg5Ntf5tGqit9CkOJfCl77U"
-
 export default function RootLayout({
   children,
 }: {
