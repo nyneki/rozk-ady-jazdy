@@ -8,8 +8,9 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Rozkłady Jazdy przez rysiekbomba",
   description: "Oficjalna strona z rozkładami jazdy pociągów",
-    generator: 'v0.dev'
-}
+  verification:{ 
+    // Tutaj zaczyna się obiekt weryfikacji
+    google: "c-SCJm_lZYDtJ-QhrXAyyg5Ntf5tGqit9CkOJfCl77U"
 
 export default function RootLayout({
   children,
